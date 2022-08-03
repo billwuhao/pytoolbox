@@ -3,6 +3,7 @@
 """
 from moviepy.editor import VideoFileClip
 import os
+import shutil
 from PIL import Image
 from pygifsicle import gifsicle
 
@@ -32,22 +33,28 @@ def zip_image(imgpath, outfile=None, kb=200):
     outfile: 压缩文件保存路径，默认覆盖源文件
     kb: 压缩目标大小（kb）
     """
-    size = os.path.getsize(imgpath) / 1024
-    if size < kb:
-        print(f'{imgpath}大小已小于{kb}kb，无需压缩')
-        return
-
     if outfile is None:
         outfile = imgpath
 
+    size = os.path.getsize(imgpath) / 1024
+    if size < kb:
+        print(f'{imgpath}大小已小于{kb}kb，无需压缩')
+        shutil.copy(imgpath, outfile)
+        return
+
     quality = 90
+    n = 1
     while size >= kb:
         im = Image.open(imgpath)
         x, y = im.size
         out = im.resize((int(x * 0.95), int(y * 0.95)), Image.ANTIALIAS)
         out.save(outfile, quality=quality)
-        if quality - 5 < 0:
-            break
+        imgpath = outfile
+        if quality - 5 < 30:
+            if size >= kb:
+                quality = 80
+            else:
+                break
         quality -= 5
         size = os.path.getsize(outfile) / 1024
 
